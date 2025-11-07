@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1d24">
+    <title>Migraine Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Migraine-friendly color palette */
+            --bg-primary: #1a1d24;
+            --bg-secondary: #252930;
+            --bg-tertiary: #2f3441;
+            --text-primary: #e8e6e3;
+            --text-secondary: #a8a6a3;
+            --accent-green: #7ba68a;
+            --accent-green-light: #9bc4a8;
+            --accent-green-dark: #5a8268;
+            --border-color: #3a3d44;
+            
+            /* Pain scale colors - muted to avoid triggering */
+            --pain-mild: #7ba68a;
+            --pain-moderate: #b89860;
+            --pain-severe: #a86860;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0 40px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--accent-green-light);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Quick Log Section */
+        .quick-log {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        /* Pain Scale */
+        .pain-scale {
+            margin-bottom: 30px;
+        }
+
+        .pain-scale-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .scroll-hint {
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        .pain-scale-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 4px 0 12px 0;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-green) var(--bg-tertiary);
+        }
+
+        .pain-scale-buttons::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .pain-scale-buttons::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+
+        .pain-scale-buttons::-webkit-scrollbar-thumb {
+            background: var(--accent-green);
+            border-radius: 3px;
+        }
+
+        .pain-btn {
+            min-width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border: 2px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pain-btn:hover {
+            border-color: var(--accent-green);
+            transform: scale(1.05);
+        }
+
+        .pain-btn.selected {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: var(--bg-primary);
+            transform: scale(1.1);
+        }
+
+        .pain-category {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .pain-category strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Quick Notes */
+        .quick-notes {
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        /* Timestamp Display */
+        .timestamp-display {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-green-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .success-message.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* History Section */
+        .history-section {
+            margin-top: 40px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .history-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .history-pain {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .history-notes {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .delete-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #a86860;
+            color: var(--text-primary);
+            border-color: #a86860;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            margin-top: 40px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-green-light);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+
+            .pain-scale-buttons {
+                gap: 4px;
+            }
+
+            .pain-btn {
+                font-size: 12px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-message" id="successMessage">
+        ✓ Migraine logged successfully
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Migraine Tracker</h1>
+            <p class="subtitle">Quick & easy migraine management</p>
+        </header>
+
+        <!-- Quick Log Section -->
+        <div class="quick-log">
+            <h2 class="section-title">Log New Episode</h2>
+            
+            <div class="pain-scale">
+                <div class="pain-scale-label">
+                    <span>Pain Intensity</span>
+                    <span id="selectedPain">Select level</span>
+                </div>
+                <div class="scroll-hint">← Swipe to see all levels →</div>
+                <div class="pain-scale-buttons" id="painScale">
+                    <!-- Generated by JavaScript -->
+                </div>
+                <div class="pain-category" id="painCategory">
+                    Select a pain level to see category
+                </div>
+            </div>
+
+            <div class="quick-notes">
+                <label class="section-title" for="notes">Quick Notes (Optional)</label>
+                <textarea 
+                    id="notes" 
+                    placeholder="Any triggers, symptoms, or observations..."
+                    maxlength="500"
+                ></textarea>
+            </div>
+
+            <div class="timestamp-display">
+                📅 <span id="currentTime"></span>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-secondary" onclick="resetForm()">Clear</button>
+                <button class="btn-primary" onclick="logMigraine()" id="logBtn">Log Episode</button>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <h2 class="section-title">Your Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalEpisodes">0</div>
+                    <div class="stat-label">Total Episodes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgPain">0</div>
+                    <div class="stat-label">Avg Pain Level</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="thisWeek">0</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastEpisode">Never</div>
+                    <div class="stat-label">Last Episode</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="history-section">
+            <h2 class="section-title">Recent History</h2>
+            <div class="history-list" id="historyList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p>No episodes logged yet</p>
+                    <p style="font-size: 13px; margin-top: 8px;">Start tracking to see your history</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pain scale data with medical categories
+        const painCategories = {
+            0: { label: "No Pain", description: "Pain-free" },
+            1: { label: "Mild", description: "Can function normally" },
+            2: { label: "Mild", description: "Can function normally" },
+            3: { label: "Mild", description: "Can function normally" },
+            4: { label: "Moderate", description: "Impacts daily activities" },
+            5: { label: "Moderate", description: "Impacts daily activities" },
+            6: { label: "Moderate", description: "Impacts daily activities" },
+            7: { label: "Severe", description: "Debilitating pain" },
+            8: { label: "Severe", description: "Debilitating pain" },
+            9: { label: "Severe", description: "Debilitating pain" },
+            10: { label: "Severe", description: "Worst possible pain" }
+        };
+
+        // Global state
+        let selectedPainLevel = null;
+        let migraines = [];
+
+        // Initialize app
+        function init() {
+            loadMigraines();
+            createPainScale();
+            updateTimestamp();
+            updateStats();
+            renderHistory();
+            setInterval(updateTimestamp, 1000);
+        }
+
+        // Create pain scale buttons
+        function createPainScale() {
+            const container = document.getElementById('painScale');
+            for (let i = 0; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'pain-btn';
+                btn.textContent = i;
+                btn.onclick = () => selectPain(i);
+                container.appendChild(btn);
+            }
+        }
+
+        // Select pain level
+        function selectPain(level) {
+            selectedPainLevel = level;
+            
+            // Update button states
+            document.querySelectorAll('.pain-btn').forEach((btn, index) => {
+                btn.classList.toggle('selected', index === level);
+            });
+            
+            // Update display
+            document.getElementById('selectedPain').textContent = level;
+            
+            // Update category
+            const category = painCategories[level];
+            document.getElementById('painCategory').innerHTML = 
+                `<strong>${category.label} (${level}/10)</strong> ${category.description}`;
+        }
+
+        // Update timestamp display
+        function updateTimestamp() {
+            const now = new Date();
+            const options = { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            };
+            document.getElementById('currentTime').textContent = 
+                now.toLocaleDateString('en-US', options);
+        }
+
+        // Log migraine
+        function logMigraine() {
+            if (selectedPainLevel === null) {
+                alert('Please select a pain level');
+                return;
+            }
+
+            const migraine = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                painLevel: selectedPainLevel,
+                notes: document.getElementById('notes').value.trim(),
+                category: painCategories[selectedPainLevel].label
+            };
+
+            migraines.unshift(migraine);
+            saveMigraines();
+            
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            setTimeout(() => successMsg.classList.remove('show'), 3000);
+            
+            // Reset form
+            resetForm();
+            
+            // Update UI
+            updateStats();
+            renderHistory();
+        }
+
+        // Reset form
+        function resetForm() {
+            selectedPainLevel = null;
+            document.querySelectorAll('.pain-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.getElementById('selectedPain').textContent = 'Select level';
+            document.getElementById('painCategory').textContent = 
+                'Select a pain level to see category';
+            document.getElementById('notes').value = '';
+        }
+
+        // Delete migraine
+        function deleteMigraine(id) {
+            if (confirm('Delete this episode?')) {
+                migraines = migraines.filter(m => m.id !== id);
+                saveMigraines();
+                updateStats();
+                renderHistory();
+            }
+        }
+
+        // Render history
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            
+            if (migraines.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No episodes logged yet</p>
+                        <p style="font-size: 13px; margin-top: 8px;">Start tracking to see your history</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = migraines.slice(0, 10).map(m => {
+                const date = new Date(m.timestamp);
+                const dateStr = date.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                return `
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-date">${dateStr}</div>
+                            <div class="history-pain">
+                                Pain Level: ${m.painLevel}/10 
+                                <span style="color: var(--text-secondary); font-size: 14px;">(${m.category})</span>
+                            </div>
+                            ${m.notes ? `<div class="history-notes">${m.notes}</div>` : ''}
+                        </div>
+                        <button class="delete-btn" onclick="deleteMigraine(${m.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = migraines.length;
+            document.getElementById('totalEpisodes').textContent = total;
+
+            if (total === 0) {
+                document.getElementById('avgPain').textContent = '0';
+                document.getElementById('thisWeek').textContent = '0';
+                document.getElementById('lastEpisode').textContent = 'Never';
+                return;
+            }
+
+            // Average pain
+            const avgPain = (migraines.reduce((sum, m) => sum + m.painLevel, 0) / total).toFixed(1);
+            document.getElementById('avgPain').textContent = avgPain;
+
+            // This week
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            const thisWeek = migraines.filter(m => new Date(m.timestamp) > weekAgo).length;
+            document.getElementById('thisWeek').textContent = thisWeek;
+
+            // Last episode
+            const lastDate = new Date(migraines[0].timestamp);
+            const now = new Date();
+            const diffHours = Math.floor((now - lastDate) / (1000 * 60 * 60));
+            
+            let lastText;
+            if (diffHours < 1) {
+                lastText = 'Just now';
+            } else if (diffHours < 24) {
+                lastText = `${diffHours}h ago`;
+            } else {
+                const diffDays = Math.floor(diffHours / 24);
+                lastText = `${diffDays}d ago`;
+            }
+            document.getElementById('lastEpisode').textContent = lastText;
+        }
+
+        // Local storage functions
+        function saveMigraines() {
+            localStorage.setItem('migraines', JSON.stringify(migraines));
+        }
+
+        function loadMigraines() {
+            const stored = localStorage.getItem('migraines');
+            if (stored) {
+                migraines = JSON.parse(stored);
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
