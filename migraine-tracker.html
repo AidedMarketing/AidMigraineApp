@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Migraine Tracker v1.4.0</title>
+    <title>Aiding Migraine</title>
     <style>
         /* ============================================
-           MIGRAINE TRACKER v1.4.0 - COMPLETE STYLES
+           AIDING MIGRAINE v1.4.0 - COMPLETE STYLES
            ============================================ */
 
         /* === ROOT VARIABLES === */
@@ -90,12 +90,14 @@
             font-size: 2rem;
             margin-bottom: 24px;
             font-weight: 600;
+            text-align: center;
         }
 
         h2 {
             font-size: 1.3rem;
             margin-bottom: 16px;
             font-weight: 500;
+            text-align: center;
         }
 
         /* === SECTION CARDS === */
@@ -123,6 +125,7 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 20px;
+            justify-content: center;
         }
 
         .pulse-indicator {
@@ -176,6 +179,7 @@
             margin-bottom: 8px;
             font-weight: 500;
             color: var(--text-primary);
+            text-align: center;
         }
 
         input[type="text"],
@@ -204,15 +208,13 @@
 
         /* === PAIN SCALE === */
         .pain-scale {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
             gap: 8px;
             margin-bottom: 8px;
-            flex-wrap: wrap;
         }
 
         .pain-btn {
-            flex: 1;
-            min-width: 40px;
             padding: 12px 8px;
             background: var(--bg-tertiary);
             border: 2px solid var(--border-color);
@@ -222,6 +224,10 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .pain-btn:hover {
@@ -610,6 +616,7 @@
             display: block;
             margin-bottom: 12px;
             font-weight: 500;
+            text-align: center;
         }
 
         .theme-options {
@@ -755,6 +762,7 @@
         .modal-header h2 {
             margin: 0;
             font-size: 1.3rem;
+            text-align: left;
         }
 
         .modal-close {
@@ -822,13 +830,12 @@
             }
 
             .pain-scale {
-                gap: 4px;
+                gap: 6px;
             }
 
             .pain-btn {
-                min-width: 32px;
-                padding: 10px 4px;
-                font-size: 0.9rem;
+                min-height: 44px;
+                font-size: 0.95rem;
             }
 
             .stats-grid {
@@ -850,7 +857,7 @@
     <div class="container">
         <!-- LOG PAGE -->
         <div id="log-page" class="page active">
-            <h1>Migraine Tracker</h1>
+            <h1>Aiding Migraine</h1>
             
             <!-- Active Episode Section -->
             <div id="active-episode-section" style="display: none;">
@@ -978,7 +985,7 @@
             <div id="history-list"></div>
         </div>
 
-        <!-- SETTINGS PAGE (NEW) -->
+        <!-- SETTINGS PAGE -->
         <div id="settings-page" class="page">
             <h1>Settings</h1>
 
@@ -1027,11 +1034,11 @@
                 <div class="settings-group">
                     <label class="settings-label">Theme</label>
                     <div class="theme-options">
-                        <button class="theme-btn active" data-theme="auto">
+                        <button class="theme-btn" data-theme="auto">
                             <span>🌓</span>
                             <span>Auto</span>
                         </button>
-                        <button class="theme-btn" data-theme="dark">
+                        <button class="theme-btn active" data-theme="dark">
                             <span>🌙</span>
                             <span>Dark</span>
                         </button>
@@ -1072,7 +1079,7 @@
 
             <!-- App Info -->
             <div class="app-info">
-                <p>Migraine Tracker v1.4.0</p>
+                <p>Aiding Migraine v1.4.0</p>
                 <p>Built with care for migraine sufferers</p>
             </div>
         </div>
@@ -1108,7 +1115,7 @@
 
     <script>
         // ============================================
-        // MIGRAINE TRACKER v1.4.0 - COMPLETE JAVASCRIPT
+        // AIDING MIGRAINE v1.4.0 - COMPLETE JAVASCRIPT
         // ============================================
 
         // === STATE ===
@@ -1158,7 +1165,8 @@
 
         // === THEME SYSTEM ===
         function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'auto';
+            // Default to dark mode (not auto)
+            const savedTheme = localStorage.getItem('theme') || 'dark';
             applyTheme(savedTheme);
             
             // Update active button
@@ -1194,7 +1202,7 @@
 
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            const currentTheme = localStorage.getItem('theme') || 'auto';
+            const currentTheme = localStorage.getItem('theme') || 'dark';
             if (currentTheme === 'auto') {
                 applyTheme('auto');
             }
@@ -1761,7 +1769,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `migraine-backup-${formatDateFile(new Date())}.json`;
+            a.download = `aiding-migraine-backup-${formatDateFile(new Date())}.json`;
             a.click();
             URL.revokeObjectURL(url);
             
@@ -1833,7 +1841,7 @@
 
         function showAbout() {
             const content = `
-                <p><strong>Migraine Tracker v1.4.0</strong></p>
+                <p><strong>Aiding Migraine v1.4.0</strong></p>
                 <p>Built with care for migraine sufferers.</p>
                 
                 <h3>Features</h3>
