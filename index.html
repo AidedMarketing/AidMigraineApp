@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy-focused migraine tracking app for monitoring episodes, pain levels, and patterns">
+    <meta name="theme-color" content="#6b8bb8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Aiding Migraine">
+    <link rel="manifest" href="manifest.json">
     <title>Aiding Migraine</title>
     <style>
         /* ============================================
@@ -938,10 +944,124 @@
                 border-width: 2px;
             }
         }
+
+        /* ============================================
+           PWA UI ELEMENTS
+           Install button and offline indicator
+           ============================================ */
+
+        /* Offline indicator */
+        #offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #c96868, #d4a574);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+
+        #offline-indicator span:first-child {
+            font-size: 1.2rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Install button */
+        #install-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--accent-blue), #5a7ba0);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(107, 139, 184, 0.4);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            min-height: 48px;
+        }
+
+        #install-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(107, 139, 184, 0.5);
+        }
+
+        #install-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Hide install button on mobile if already in standalone mode */
+        @media (display-mode: standalone) {
+            #install-btn {
+                display: none !important;
+            }
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 600px) {
+            #install-btn {
+                bottom: 90px;
+                right: 16px;
+                font-size: 0.9rem;
+                padding: 14px 20px;
+            }
+
+            #offline-indicator {
+                font-size: 0.9rem;
+                padding: 10px 16px;
+            }
+        }
+
+        /* Respect reduced motion for PWA animations */
+        @media (prefers-reduced-motion: reduce) {
+            #offline-indicator {
+                animation: none;
+            }
+
+            #install-btn:hover {
+                transform: none;
+            }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+    <!-- Offline indicator -->
+    <div id="offline-indicator" style="display: none;">
+        <span>📡</span>
+        <span>Offline - App will continue to work</span>
+    </div>
+
+    <!-- Install PWA button -->
+    <button id="install-btn" onclick="installPWA()" aria-label="Install Aiding Migraine app" style="display: none;">
+        📱 Install App
+    </button>
+
     <div class="container" role="main">
         <!-- Screen reader announcements -->
         <div id="sr-announcements" role="status" aria-live="polite" aria-atomic="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;"></div>
@@ -3376,6 +3496,162 @@
             if (days < 7) return `${days}d ago`;
             return formatDate(date);
         }
+
+        // ============================================
+        // PWA SERVICE WORKER REGISTRATION
+        // ============================================
+
+        let deferredPrompt;
+        let swRegistration = null;
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker registered:', registration.scope);
+                        swRegistration = registration;
+
+                        // Check for updates every hour
+                        setInterval(() => {
+                            registration.update();
+                        }, 3600000);
+
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Show update notification
+        function showUpdateNotification() {
+            const updateMsg = document.createElement('div');
+            updateMsg.id = 'update-notification';
+            updateMsg.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--accent-blue);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                max-width: 90%;
+                animation: slideDown 0.3s ease;
+            `;
+            updateMsg.innerHTML = `
+                <span>✨ New version available!</span>
+                <button onclick="updateApp()" style="
+                    background: white;
+                    color: var(--accent-blue);
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                ">Update</button>
+                <button onclick="dismissUpdate()" style="
+                    background: transparent;
+                    color: white;
+                    border: 1px solid white;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                ">Later</button>
+            `;
+            document.body.appendChild(updateMsg);
+        }
+
+        // Update app
+        function updateApp() {
+            if (swRegistration && swRegistration.waiting) {
+                swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            window.location.reload();
+        }
+
+        // Dismiss update notification
+        function dismissUpdate() {
+            const notification = document.getElementById('update-notification');
+            if (notification) {
+                notification.remove();
+            }
+        }
+
+        // Capture beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('📱 Install prompt available');
+
+            // Show install button if not already installed
+            const installBtn = document.getElementById('install-btn');
+            if (installBtn && !window.matchMedia('(display-mode: standalone)').matches) {
+                installBtn.style.display = 'block';
+            }
+        });
+
+        // Install PWA
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('✅ PWA installed');
+                        announceToScreenReader('Aiding Migraine installed successfully');
+                    }
+                    deferredPrompt = null;
+                    const installBtn = document.getElementById('install-btn');
+                    if (installBtn) {
+                        installBtn.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Track online/offline status
+        function updateOnlineStatus() {
+            const indicator = document.getElementById('offline-indicator');
+            if (indicator) {
+                if (navigator.onLine) {
+                    indicator.style.display = 'none';
+                    announceToScreenReader('Connection restored');
+                } else {
+                    indicator.style.display = 'flex';
+                    announceToScreenReader('You are offline. App will continue to work.');
+                }
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // Check if app is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA was installed');
+            deferredPrompt = null;
+            const installBtn = document.getElementById('install-btn');
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+            announceToScreenReader('Aiding Migraine installed successfully');
+        });
     </script>
 </body>
 </html>
