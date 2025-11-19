@@ -2108,11 +2108,29 @@
                         return;
                     }
 
+                    // Check storage space
+                    const importSize = new Blob([text]).size;
+                    const storageCheck = checkStorageSpace(importSize);
+
+                    if (!storageCheck.hasSpace) {
+                        showModal('Storage Full',
+                            `<p>Not enough storage space to import this file.</p>` +
+                            `<div style="margin: 16px 0; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 0.9rem;">` +
+                            `<p>Current data: <strong>${storageCheck.currentMB} MB</strong></p>` +
+                            `<p>Import size: <strong>${storageCheck.importMB} MB</strong></p>` +
+                            `<p>Total would be: <strong>${storageCheck.totalMB} MB</strong></p>` +
+                            `<p>Storage limit: <strong>${storageCheck.limitMB} MB</strong></p>` +
+                            `</div>` +
+                            `<p style="color: var(--text-secondary); font-size: 0.9rem;">Try exporting and deleting old episodes, or empty your trash to free up space.</p>`);
+                        e.target.value = '';
+                        return;
+                    }
+
                     // Analyze import data
                     const analysis = analyzeImportData(data.migraines);
 
-                    // Show import review UI
-                    showImportReviewModal(data.migraines, analysis);
+                    // Show import review UI with storage warning if needed
+                    showImportReviewModal(data.migraines, analysis, storageCheck);
 
                 } catch (error) {
                     let title = 'Import Failed';
@@ -2150,6 +2168,66 @@
             };
 
             reader.readAsText(file);
+        }
+
+        function sanitizeHTML(text) {
+            if (!text || typeof text !== 'string') return text;
+
+            // Create a temporary div to use browser's HTML parser
+            const temp = document.createElement('div');
+            temp.textContent = text;
+            return temp.innerHTML;
+        }
+
+        function sanitizeEpisode(episode) {
+            // Sanitize text fields to prevent XSS
+            const textFields = ['notes', 'medication', 'endNotes', 'triggers'];
+
+            textFields.forEach(field => {
+                if (episode[field]) {
+                    episode[field] = sanitizeHTML(episode[field]);
+                }
+            });
+
+            return episode;
+        }
+
+        function checkStorageSpace(dataSize) {
+            try {
+                // Get current storage usage
+                const currentData = localStorage.getItem('migraines') || '[]';
+                const currentSize = new Blob([currentData]).size;
+
+                // Estimate total size after import
+                const estimatedTotal = currentSize + dataSize;
+
+                // LocalStorage limit is typically 5-10MB, we'll use 5MB as conservative estimate
+                const storageLimit = 5 * 1024 * 1024; // 5MB
+
+                // Check if we're approaching the limit (use 80% threshold)
+                const threshold = storageLimit * 0.8;
+
+                if (estimatedTotal > threshold) {
+                    const currentMB = (currentSize / (1024 * 1024)).toFixed(2);
+                    const importMB = (dataSize / (1024 * 1024)).toFixed(2);
+                    const totalMB = (estimatedTotal / (1024 * 1024)).toFixed(2);
+
+                    return {
+                        hasSpace: estimatedTotal <= storageLimit,
+                        warning: estimatedTotal > threshold && estimatedTotal <= storageLimit,
+                        currentMB: currentMB,
+                        importMB: importMB,
+                        totalMB: totalMB,
+                        limitMB: (storageLimit / (1024 * 1024)).toFixed(2)
+                    };
+                }
+
+                return { hasSpace: true, warning: false };
+            } catch (e) {
+                // If we can't check, assume it's okay but log the error
+                console.error('Storage check failed:', e);
+                return { hasSpace: true, warning: false };
+            }
         }
 
         function validateEpisodes(episodes) {
@@ -2195,6 +2273,9 @@
                         errors.push(`Episode ${index + 1}: Invalid duration value`);
                     }
                 }
+
+                // Sanitize text fields to prevent XSS attacks
+                sanitizeEpisode(episode);
             });
 
             return {
@@ -2260,11 +2341,24 @@
             };
         }
 
-        function showImportReviewModal(importedEpisodes, analysis) {
+        function showImportReviewModal(importedEpisodes, analysis, storageCheck) {
             const modal = document.getElementById('modal');
             const body = document.getElementById('modal-body');
 
-            let summaryHTML = `
+            let summaryHTML = ``;
+
+            // Show storage warning if approaching limit
+            if (storageCheck && storageCheck.warning) {
+                summaryHTML += `
+                    <div style="padding: 12px; background: var(--accent-red); color: white; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem;">
+                        <strong>⚠️ Storage Warning</strong><br>
+                        You're approaching the storage limit (${storageCheck.totalMB} MB / ${storageCheck.limitMB} MB).
+                        Consider deleting old episodes or emptying trash after import.
+                    </div>
+                `;
+            }
+
+            summaryHTML += `
                 <p style="margin-bottom: 16px;">Found <strong>${analysis.total} episodes</strong> in backup file:</p>
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
                     <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 8px; display: flex; justify-content: space-between;">
