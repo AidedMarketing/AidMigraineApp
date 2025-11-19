@@ -2819,11 +2819,20 @@
                     </div>
                 `;
 
+                // Initially center tooltip to get proper dimensions
+                tooltip.style.top = '50%';
+                tooltip.style.left = '50%';
+                tooltip.style.transform = 'translate(-50%, -50%)';
+
+                // Force reflow to get accurate dimensions
+                tooltip.offsetHeight;
+
                 // Position tooltip
                 if (step.target) {
                     const targetEl = document.querySelector(step.target);
                     if (targetEl) {
                         const rect = targetEl.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
 
                         // Highlight the target element
                         targetEl.style.position = 'relative';
@@ -2833,7 +2842,6 @@
                         targetEl.setAttribute('data-tour-highlight', 'true');
 
                         // Calculate tooltip position with bounds checking
-                        const tooltipRect = tooltip.getBoundingClientRect();
                         const margin = 20;
                         const screenPadding = 10;
 
@@ -2870,12 +2878,8 @@
                         tooltip.style.left = `${tooltipLeft}px`;
                         tooltip.style.transform = 'translateX(-50%)';
                     }
-                } else {
-                    // Center tooltip
-                    tooltip.style.top = '50%';
-                    tooltip.style.left = '50%';
-                    tooltip.style.transform = 'translate(-50%, -50%)';
                 }
+                // If no target or target not found, tooltip stays centered (already set above)
             }, 100); // Small delay to let page switch complete
         }
 
