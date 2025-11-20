@@ -4,6 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aiding Migraine</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#6b4c9a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AidMigraine">
+
+    <!-- Favicons and Touch Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-72.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-128.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-96.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72.png">
+
+    <!-- MS Tiles -->
+    <meta name="msapplication-TileColor" content="#6b4c9a">
+    <meta name="msapplication-TileImage" content="/icons/icon-144.png">
+
     <style>
         /* ============================================
            AIDING MIGRAINE v1.5.0 - WEEK 3 POLISH
@@ -3208,6 +3233,21 @@
             if (hours < 24) return `${hours}h ago`;
             if (days < 7) return `${days}d ago`;
             return formatDate(date);
+        }
+
+        // ============================================
+        // PWA - Service Worker Registration
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    })
+                    .catch((err) => {
+                        console.log('ServiceWorker registration failed:', err);
+                    });
+            });
         }
     </script>
 </body>
