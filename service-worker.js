@@ -1,14 +1,19 @@
 // Aiding Migraine - Service Worker
-// Version 1.0.0
+// Version 1.1.0
 
-const CACHE_NAME = 'aiding-migraine-v1';
+const CACHE_NAME = 'aiding-migraine-v1.1';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icons/icon-384.png',
-    '/icons/icon-512.png',
-    '/icons/icon-512-maskable.png'
+    '/icons/favicon-16x16.png',
+    '/icons/favicon-32x32.png',
+    '/icons/apple-touch-icon.png',
+    '/icons/icon-192x192.png',
+    '/icons/icon-192x192-maskable.png',
+    '/icons/icon-384x384.png',
+    '/icons/icon-512x512.png',
+    '/icons/icon-512x512-maskable.png'
 ];
 
 // Install event - cache assets
